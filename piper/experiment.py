@@ -47,13 +47,19 @@ class Experiment(object):
         with open(filename, "w") as fd:
             json.dump(data, fd)
 
-    def add_checkpoint(self, name, config):
+    def add_checkpoint(self, name, config=None, dependencies=None):
+        if not config:
+            config = {}
+
+        if not dependencies:
+            dependencies = []
+
         if self.checkpoints:
             prev = self.checkpoints[-1]
         else:
             prev = None
 
-        ckpt = Checkpoint(name, config, prev)
+        ckpt = Checkpoint(name, config, prev, dependencies)
 
         self.checkpoints.append(ckpt)
 

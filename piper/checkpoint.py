@@ -11,10 +11,11 @@ from .misc import mkdirp, get_piper_path
 BLOCKSIZE = 2**13
 
 class Checkpoint(object):
-    def __init__(self, name, config, prev_checkpoint):
+    def __init__(self, name, config, prev_checkpoint, dependencies):
         self.name = name
         self.config = config
         self.prev_checkpoint = prev_checkpoint
+        self.dependencies = dependencies
         self.path = os.path.join(get_piper_path(), "checkpoints", self.get_hash())
 
     def __enter__(self):
@@ -60,15 +61,19 @@ class Checkpoint(object):
         for key, value in sorted(self.config.items()):
             m.update("{}{}".format(key, value).encode("utf-8"))
 
+        files = self.dependencies[:]
+
         if self.prev_checkpoint:
-            for filename in self.prev_checkpoint.listdir():
-                with open(filename, "rb") as fd:
-                    data = fd.read(BLOCKSIZE)
+            files += self.prev_checkpoint.listdir()
 
-                    if not data:
-                        break
+        for filename in files:
+            with open(filename, "rb") as fd:
+                data = fd.read(BLOCKSIZE)
 
-                    m.update(data)
+                if not data:
+                    break
+
+                m.update(data)
 
         return m.hexdigest()
 
