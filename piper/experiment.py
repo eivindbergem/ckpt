@@ -1,42 +1,42 @@
 import json
 import os.path
+import time
+import logging
 
-from contextlib import AbstractContextManager
-
-from .misc import mkdirp
+from .misc import mkdirp, get_piper_path
 from .checkpoint import Checkpoint
 
-class Experiment(AbstractContextManager):
+
+class Experiment(object):
     def __init__(self, name, config):
         self.name = name
         self.config = config
 
     def __enter__(self):
+        logging.info("Running experiment '{}'".format(self.name))
         self.metrics = {}
+        self.timestamp = time.time()
+        self.checkpoints = []
 
         return self
 
     def __exit__(self, *exc_details):
+        logging.info("Experiment done, saving config and results.")
         self.save()
 
-    def add_metric(self, key, value):
-        self.metrics[key] = value
+    def add_metrics(self, metrics):
+        self.metrics.update(metrics)
 
     def get_path(self):
-        path = "experiments"
+        path = os.path.join(get_piper_path(), "experiments", self.name)
 
         mkdirp(path)
 
         return path
 
-    def config_str(self):
-        return "{}-{}".format(self.name,
-                              "-".join("{}-{}".format(key, value)
-                                       for key, value in self.config.items()))
-
     def get_filename(self):
         return os.path.join(self.get_path(),
-                            "{}.json".format(self.config_str()))
+                            "{}.json".format(self.timestamp))
 
     def save(self):
         filename = self.get_filename()
@@ -47,5 +47,14 @@ class Experiment(AbstractContextManager):
         with open(filename, "w") as fd:
             json.dump(data, fd)
 
-    def checkpoint(self, name):
-        return Checkpoint(name, self.name, self.config)
+    def add_checkpoint(self, name, config):
+        if self.checkpoints:
+            prev = self.checkpoints[-1]
+        else:
+            prev = None
+
+        ckpt = Checkpoint(name, config, prev)
+
+        self.checkpoints.append(ckpt)
+
+        return ckpt

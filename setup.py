@@ -7,4 +7,6 @@ setup(name='piper',
       author='Eivind Alexander Bergem',
       author_email='eivind.bergem@gmail.com',
       license='GPL',
-      packages=['piper'])
+      packages=['piper'],
+      test_suite='nose.collector',
+      tests_require=['nose'])

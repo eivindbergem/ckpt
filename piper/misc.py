@@ -1,5 +1,15 @@
 import os
 
+piper_path = ".piper"
+
+def set_piper_path(path):
+    global piper_path
+
+    piper_path = path
+
+def get_piper_path():
+    return piper_path
+
 def mkdirp(dirname):
     """Same as `mkdir -p <dirname>`"""
 
