@@ -1,0 +1,7 @@
+/.env
+*~
+/piper.egg-info
+__pycache__
+\#*\#
+*.pyc
+.\#*
