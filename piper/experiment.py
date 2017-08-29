@@ -21,8 +21,11 @@ class Experiment(object):
         return self
 
     def __exit__(self, *exc_details):
-        logging.info("Experiment done, saving config and results.")
-        self.save()
+        if self.metrics:
+            logging.info("Experiment done, saving config and results.")
+            self.save()
+        else:
+            logging.info("No metrics found, not saving experiment.")
 
     def add_metrics(self, metrics):
         self.metrics.update(metrics)
