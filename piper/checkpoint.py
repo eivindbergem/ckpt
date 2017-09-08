@@ -3,6 +3,7 @@ import os
 import os.path
 import time
 import logging
+import gzip
 
 from functools import wraps
 
@@ -91,3 +92,17 @@ class Checkpoint(object):
 
     def exists(self):
         return os.path.exists(self.get_path()) and len(self.listdir()) > 0
+
+    def open_file(self, filename, mode="r", compression=gzip):
+        filename = self.join_path(filename)
+
+        if compression:
+            # Default to text mode if not specified, as is the case
+            # for builtins.open
+            if not any(True for c in mode
+                        if c in ("t", "b")):
+                mode += "t"
+
+            return compression.open(filename, mode)
+        else:
+            return open(filename, mode)
