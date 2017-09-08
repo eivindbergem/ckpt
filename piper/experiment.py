@@ -28,6 +28,9 @@ class Experiment(object):
             logging.info("No metrics found, not saving experiment.")
 
     def add_metrics(self, metrics):
+        for k, v in metrics.items():
+            logging.info("Added metric: {} = {}".format(k, v))
+
         self.metrics.update(metrics)
 
     def get_path(self):
