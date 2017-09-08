@@ -24,6 +24,8 @@ class Checkpoint(object):
             logging.info("Found checkpoint for {}".format(self.name))
             logging.debug(self.get_path())
 
+        self.mkdir()
+
         return self
 
     def __exit__(self, *exc_details):
@@ -36,8 +38,6 @@ class Checkpoint(object):
     def save(fn):
         @wraps(fn)
         def wrapper(ckpt, *args, **kwargs):
-            ckpt.mkdir()
-
             logging.info("Saving checkpoint for {}".format(ckpt.name))
             logging.debug(ckpt.get_path())
             return fn(ckpt, *args, **kwargs)
