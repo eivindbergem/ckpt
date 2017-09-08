@@ -1,4 +1,4 @@
-from piper import Experiment
+from piper import Experiment, Checkpoint
 import keras.models
 
 from keras.datasets import mnist
@@ -43,19 +43,27 @@ def reshape_data(x, y):
 def load_data():
     return [reshape_data(x, y) for x, y in mnist.load_data()]
 
+@Checkpoint.load
+def load(ckpt, filename):
+    return keras.models.load_model(filename)
+
+@Checkpoint.save
+def save(ckpt, model, filename):
+    model.save(filename)
+
 (x_train, y_train), (x_test, y_test) = load_data()
 
 with Experiment("mnist", config) as ex:
-    with ex.checkpoint("model") as checkpoint:
-        filename = checkpoint.get_path()
+    with ex.add_checkpoint("model", config) as ckpt:
+        filename = ckpt.join_path("model.h5")
 
-        if os.path.exists(filename):
-            model = keras.models.load_model(filename)
+        if ckpt.exists():
+            model = load(ckpt, filename)
         else:
             model = train(x_train, y_train, config)
-            model.save(filename)
+            save(ckpt, model, filename)
 
     loss, accuracy = evaluate(model, x_test, y_test, config)
 
-    ex.add_metric("loss", loss)
-    ex.add_metric("precision", accuracy)
+    ex.add_metrics({"loss": loss,
+                    "precision": accuracy})
