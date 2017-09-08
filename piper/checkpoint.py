@@ -103,6 +103,8 @@ class Checkpoint(object):
                         if c in ("t", "b")):
                 mode += "t"
 
+            filename += ".gz"
+
             return compression.open(filename, mode)
         else:
             return open(filename, mode)
