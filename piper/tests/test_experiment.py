@@ -35,6 +35,11 @@ class TestPiper(TestCase):
 
         self.assertTrue(os.path.exists(filename))
 
+        while filename:
+            os.rmdir(filename)
+
+            filename = os.path.dirname(filename)
+
     def test_experiment(self):
         config = {"test": "test"}
 
