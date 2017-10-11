@@ -20,9 +20,10 @@ class Checkpoint(object):
         self.path = os.path.join(get_piper_path(), "checkpoints", self.get_hash())
 
     def __enter__(self):
+        logging.info("Entering checkpoing '{}'".format(self.name))
+
         if self.exists():
             logging.info("Found checkpoint for {}".format(self.name))
-            logging.debug(self.get_path())
 
         self.mkdir()
 
@@ -30,7 +31,8 @@ class Checkpoint(object):
 
     def __exit__(self, *exc_details):
         if os.path.exists(self.get_path()) and not self.listdir():
-            logging.info("Checkpoint dir for {} empty, removing.".format(self.name))
+            logging.info("Checkpoint dir for {} empty, removing."
+                         .format(self.name))
             logging.debug(self.get_path)
             os.rmdir(self.get_path())
 
@@ -38,8 +40,8 @@ class Checkpoint(object):
     def save(fn):
         @wraps(fn)
         def wrapper(ckpt, *args, **kwargs):
-            logging.info("Saving checkpoint for {}".format(ckpt.name))
-            logging.debug(ckpt.get_path())
+            logging.info("Saving checkpoint for {} to".format(ckpt.name,
+                                                              ckpt.get_path()))
             return fn(ckpt, *args, **kwargs)
 
         return wrapper
@@ -48,8 +50,8 @@ class Checkpoint(object):
     def load(fn):
         @wraps(fn)
         def wrapper(ckpt, *args, **kwargs):
-            logging.info("Loading checkpoint for {}".format(ckpt.name))
-            logging.debug(ckpt.get_path())
+            logging.info("Loading checkpoint for {} from"
+                         .format(ckpt.name, ckpt.get_path()))
             return fn(ckpt, *args, **kwargs)
 
         return wrapper
