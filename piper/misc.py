@@ -18,3 +18,9 @@ def mkdirp(dirname):
     except OSError as err:
         if not (err.errno == 17 and os.path.isdir(dirname)):
             raise
+
+def add_defaults(config, defaults):
+    return {key: (value
+                  if key not in config
+                  else config[key])
+            for key, value in defaults.items()}
