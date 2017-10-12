@@ -7,7 +7,7 @@ import gzip
 
 from functools import wraps
 
-from .misc import mkdirp, get_piper_path
+from .misc import mkdirp, get_ckpt_path
 
 BLOCKSIZE = 2**13
 
@@ -17,7 +17,7 @@ class Checkpoint(object):
         self.config = config
         self.prev_checkpoint = prev_checkpoint
         self.dependencies = dependencies
-        self.path = os.path.join(get_piper_path(), "checkpoints", self.get_hash())
+        self.path = os.path.join(get_ckpt_path(), "checkpoints", self.get_hash())
 
     def __enter__(self):
         logging.info("Entering checkpoing '{}'".format(self.name))

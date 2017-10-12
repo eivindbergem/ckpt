@@ -1,14 +1,14 @@
 import os
 
-piper_path = ".piper"
+ckpt_path = ".ckpt"
 
-def set_piper_path(path):
-    global piper_path
+def set_ckpt_path(path):
+    global ckpt_path
 
-    piper_path = path
+    ckpt_path = path
 
-def get_piper_path():
-    return piper_path
+def get_ckpt_path():
+    return ckpt_path
 
 def mkdirp(dirname):
     """Same as `mkdir -p <dirname>`"""

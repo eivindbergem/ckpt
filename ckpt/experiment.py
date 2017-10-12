@@ -3,7 +3,7 @@ import os.path
 import time
 import logging
 
-from .misc import mkdirp, get_piper_path
+from .misc import mkdirp, get_ckpt_path
 from .checkpoint import Checkpoint
 
 
@@ -34,7 +34,7 @@ class Experiment(object):
         self.metrics.update(metrics)
 
     def get_path(self):
-        path = os.path.join(get_piper_path(), "experiments", self.name)
+        path = os.path.join(get_ckpt_path(), "experiments", self.name)
 
         mkdirp(path)
 

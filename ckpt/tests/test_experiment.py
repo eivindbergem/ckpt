@@ -5,8 +5,8 @@ import shutil
 import os.path
 import json
 
-from piper.experiment import Experiment, Checkpoint
-from piper.misc import set_piper_path, get_piper_path, mkdirp
+from ckpt.experiment import Experiment, Checkpoint
+from ckpt.misc import set_ckpt_path, get_ckpt_path, mkdirp
 
 @Checkpoint.save
 def save(ckpt, filename, data):
@@ -20,10 +20,10 @@ def load(ckpt, filename):
 
     return data
 
-class TestPiper(TestCase):
+class TestCkpt(TestCase):
     def setUp(self):
         self.path = mkdtemp()
-        set_piper_path(self.path)
+        set_ckpt_path(self.path)
 
     def tearDown(self):
         shutil.rmtree(self.path)
@@ -43,7 +43,7 @@ class TestPiper(TestCase):
     def test_experiment(self):
         config = {"test": "test"}
 
-        self.assertEqual(self.path, get_piper_path())
+        self.assertEqual(self.path, get_ckpt_path())
 
         with Experiment("test", config) as ex:
             self.assertEqual(ex.get_path(),

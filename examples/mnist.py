@@ -1,4 +1,4 @@
-from piper import Experiment, Checkpoint
+from ckpt import Experiment, Checkpoint
 import keras.models
 
 from keras.datasets import mnist

@@ -1,12 +1,12 @@
 from setuptools import setup
 
-setup(name='piper',
+setup(name='ckpt',
       version='0.1',
-      description='Pipeline for machine learning',
-      url='http://github.com/eivindbergem/piper',
+      description='Experimental scaffolding for machine learning',
+      url='http://github.com/eivindbergem/ckpt',
       author='Eivind Alexander Bergem',
       author_email='eivind.bergem@gmail.com',
       license='GPL',
-      packages=['piper'],
+      packages=['ckpt'],
       test_suite='nose.collector',
       tests_require=['nose'])
