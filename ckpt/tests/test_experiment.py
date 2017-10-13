@@ -49,7 +49,8 @@ class TestCkpt(TestCase):
             self.assertEqual(ex.get_path(),
                              os.path.join(self.path,
                                           "experiments",
-                                          "test"))
+                                          "test",
+                                          str(ex.timestamp)))
 
             with ex.add_checkpoint("test", config) as ckpt:
                 self.assertFalse(ckpt.exists())
@@ -70,9 +71,11 @@ class TestCkpt(TestCase):
 
             ex.add_metrics({"test": 42})
 
-            filename = ex.get_filename()
-
-        with open(filename) as fd:
+        with open(ex.join_path("metrics.json")) as fd:
             data = json.load(fd)
 
-        self.assertEqual(data['metrics']['test'], 42)
+        self.assertEqual(data['test'], 42)
+
+        self.assertCountEqual(os.listdir(ex.get_path()),
+                              ["log", "metrics.json",
+                               "config.json", "checkpoints.json"])

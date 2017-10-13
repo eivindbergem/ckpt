@@ -12,18 +12,19 @@ from .misc import mkdirp, get_ckpt_path
 BLOCKSIZE = 2**13
 
 class Checkpoint(object):
-    def __init__(self, name, config, prev_checkpoint, dependencies):
+    def __init__(self, name, config, prev_checkpoint, dependencies, logger):
         self.name = name
         self.config = config
         self.prev_checkpoint = prev_checkpoint
         self.dependencies = dependencies
         self.path = os.path.join(get_ckpt_path(), "checkpoints", self.get_hash())
+        self.logger = logger
 
     def __enter__(self):
-        logging.info("Entering checkpoing '{}'".format(self.name))
+        self.logger.info("Entering checkpoing '{}'".format(self.name))
 
         if self.exists():
-            logging.info("Found checkpoint for {}".format(self.name))
+            self.logger.info("Found checkpoint for {}".format(self.name))
 
         self.mkdir()
 
@@ -31,17 +32,16 @@ class Checkpoint(object):
 
     def __exit__(self, *exc_details):
         if os.path.exists(self.get_path()) and not self.listdir():
-            logging.info("Checkpoint dir for {} empty, removing."
-                         .format(self.name))
-            logging.debug(self.get_path)
+            self.logger.info("Checkpoint dir for {} empty, removing."
+                             .format(self.name))
             os.rmdir(self.get_path())
 
     @staticmethod
     def save(fn):
         @wraps(fn)
         def wrapper(ckpt, *args, **kwargs):
-            logging.info("Saving checkpoint for {} to".format(ckpt.name,
-                                                              ckpt.get_path()))
+            ckpt.logger.info("Saving checkpoint for {} to {}"
+                             .format(ckpt.name, ckpt.get_path()))
             return fn(ckpt, *args, **kwargs)
 
         return wrapper
@@ -50,8 +50,8 @@ class Checkpoint(object):
     def load(fn):
         @wraps(fn)
         def wrapper(ckpt, *args, **kwargs):
-            logging.info("Loading checkpoint for {} from"
-                         .format(ckpt.name, ckpt.get_path()))
+            ckpt.logger.info("Loading checkpoint for {} from {}"
+                             .format(ckpt.name, ckpt.get_path()))
             return fn(ckpt, *args, **kwargs)
 
         return wrapper

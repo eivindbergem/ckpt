@@ -1,4 +1,5 @@
 import os
+import json
 
 ckpt_path = ".ckpt"
 
@@ -24,3 +25,7 @@ def add_defaults(config, defaults):
                   if key not in config
                   else config[key])
             for key, value in defaults.items()}
+
+def save_as_json(data, filename):
+    with open(filename, "w") as fd:
+        json.dump(data, fd)

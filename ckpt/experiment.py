@@ -3,55 +3,69 @@ import os.path
 import time
 import logging
 
-from .misc import mkdirp, get_ckpt_path
+from .misc import mkdirp, get_ckpt_path, save_as_json
 from .checkpoint import Checkpoint
 
+LOG_FORMAT = '%(asctime)s %(name)-10s %(message)s'
+LOG_DATEFMT = '%H:%M'
+
+logging.basicConfig(format=LOG_FORMAT,
+                    datefmt=LOG_DATEFMT)
 
 class Experiment(object):
-    def __init__(self, name, config):
+    def __init__(self, name, config, loglevel=logging.INFO):
         self.name = name
         self.config = config
+        self.loglevel = loglevel
 
     def __enter__(self):
-        logging.info("Running experiment '{}'".format(self.name))
         self.metrics = {}
         self.timestamp = time.time()
         self.checkpoints = []
 
+        mkdirp(self.get_path())
+        self.save_config()
+
+        self.logger = logging.getLogger("ckpt.experiment<{}>".format(self.name))
+        self.logger.setLevel(self.loglevel)
+
+        self.log_handler = logging.FileHandler(self.join_path("log"))
+        self.log_handler.setFormatter(logging.Formatter(LOG_FORMAT,
+                                                        datefmt=LOG_DATEFMT))
+        logging.getLogger('').addHandler(self.log_handler)
+
+        self.logger.info("Running experiment '{}'".format(self.name))
+
         return self
 
     def __exit__(self, *exc_details):
-        if self.metrics:
-            logging.info("Experiment done, saving config and results.")
-            self.save()
-        else:
-            logging.info("No metrics found, not saving experiment.")
+        self.logger.info("Experiment done, saving config and results.")
+        self.save_metrics()
+        self.save_checkpoints()
+        logging.getLogger('').removeHandler(self.log_handler)
 
     def add_metrics(self, metrics):
         for k, v in metrics.items():
-            logging.info("Added metric: {} = {}".format(k, v))
+            self.logger.info("Added metric: {} = {}".format(k, v))
 
         self.metrics.update(metrics)
 
     def get_path(self):
-        path = os.path.join(get_ckpt_path(), "experiments", self.name)
+        return os.path.join(get_ckpt_path(), "experiments", self.name,
+                            str(self.timestamp))
 
-        mkdirp(path)
+    def join_path(self, *paths):
+        return os.path.join(self.get_path(), *paths)
 
-        return path
+    def save_config(self):
+        save_as_json(self.config, self.join_path("config.json"))
 
-    def get_filename(self):
-        return os.path.join(self.get_path(),
-                            "{}.json".format(self.timestamp))
+    def save_metrics(self):
+        save_as_json(self.metrics, self.join_path("metrics.json"))
 
-    def save(self):
-        filename = self.get_filename()
-
-        data = {"config": self.config,
-                "metrics": self.metrics}
-
-        with open(filename, "w") as fd:
-            json.dump(data, fd)
+    def save_checkpoints(self):
+        save_as_json([ckpt.get_path() for ckpt in self.checkpoints],
+                     self.join_path("checkpoints.json"))
 
     def add_checkpoint(self, name, config=None, dependencies=None):
         if not config:
@@ -65,7 +79,7 @@ class Experiment(object):
         else:
             prev = None
 
-        ckpt = Checkpoint(name, config, prev, dependencies)
+        ckpt = Checkpoint(name, config, prev, dependencies, self.logger)
 
         self.checkpoints.append(ckpt)
 
