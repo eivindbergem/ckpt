@@ -59,8 +59,6 @@ class Checkpoint(object):
     def get_hash(self):
         m = hashlib.sha256()
 
-        m.update(self.name.encode("utf-8"))
-
         for key, value in sorted(self.config.items()):
             m.update("{}{}".format(key, value).encode("utf-8"))
 
