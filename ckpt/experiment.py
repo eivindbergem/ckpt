@@ -8,15 +8,16 @@ from .checkpoint import Checkpoint
 
 LOG_FORMAT = '%(asctime)s %(name)-10s %(message)s'
 LOG_DATEFMT = '%H:%M'
+LOG_LEVEL = logging.INFO
 
 logging.basicConfig(format=LOG_FORMAT,
-                    datefmt=LOG_DATEFMT)
+                    datefmt=LOG_DATEFMT,
+                    level=LOG_LEVEL)
 
 class Experiment(object):
-    def __init__(self, name, config, loglevel=logging.INFO):
+    def __init__(self, name, config):
         self.name = name
         self.config = config
-        self.loglevel = loglevel
 
     def __enter__(self):
         self.metrics = {}
@@ -26,13 +27,12 @@ class Experiment(object):
         mkdirp(self.get_path())
         self.save_config()
 
-        self.logger = logging.getLogger("ckpt.experiment<{}>".format(self.name))
-        self.logger.setLevel(self.loglevel)
-
         self.log_handler = logging.FileHandler(self.join_path("log"))
         self.log_handler.setFormatter(logging.Formatter(LOG_FORMAT,
                                                         datefmt=LOG_DATEFMT))
         logging.getLogger('').addHandler(self.log_handler)
+
+        self.logger = logging.getLogger("ckpt.experiment<{}>".format(self.name))
 
         self.logger.info("Running experiment '{}'".format(self.name))
 
@@ -40,6 +40,7 @@ class Experiment(object):
 
     def __exit__(self, *exc_details):
         self.logger.info("Experiment done, saving config and results.")
+
         self.save_metrics()
         self.save_checkpoints()
         logging.getLogger('').removeHandler(self.log_handler)
