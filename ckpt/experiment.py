@@ -68,19 +68,20 @@ class Experiment(object):
         save_as_json([ckpt.get_path() for ckpt in self.checkpoints],
                      self.join_path("checkpoints.json"))
 
-    def add_checkpoint(self, name, config=None, dependencies=None):
+    def add_checkpoint(self, name, config=None, dependencies=None,
+                       prev_checkpoint=None):
         if not config:
             config = {}
 
         if not dependencies:
             dependencies = []
 
-        if self.checkpoints:
-            prev = self.checkpoints[-1]
-        else:
-            prev = None
+        # Depend on previous checkpoint if none other specified
+        if not prev_checkpoint and self.checkpoints:
+            prev_checkpoint = self.checkpoints[-1]
 
-        ckpt = Checkpoint(name, config, prev, dependencies, self.logger)
+        ckpt = Checkpoint(name, config, prev_checkpoint,
+                          dependencies, self.logger)
 
         self.checkpoints.append(ckpt)
 
