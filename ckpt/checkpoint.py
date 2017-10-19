@@ -21,7 +21,7 @@ class Checkpoint(object):
         self.logger = logger
 
     def __enter__(self):
-        self.logger.info("Entering checkpoing '{}'".format(self.name))
+        self.logger.info("Entering checkpoint '{}'".format(self.name))
 
         if self.exists():
             self.logger.info("Found checkpoint for {}".format(self.name))
