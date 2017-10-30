@@ -29,3 +29,18 @@ def add_defaults(config, defaults):
 def save_as_json(data, filename):
     with open(filename, "w") as fd:
         json.dump(data, fd)
+
+def load_json(filename):
+    with open(filename) as fd:
+        return json.load(fd)
+
+def mark_final(iterable):
+    prev = None
+
+    for item in iterable:
+        if prev:
+            yield False, prev
+
+        prev = item
+
+    yield True, prev

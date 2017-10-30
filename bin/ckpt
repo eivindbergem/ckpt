@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+from ckpt.report import get_experiments, tabulate_data
+
+import argparse
+
+parser = argparse.ArgumentParser(description='CKPT')
+commands = parser.add_subparsers(title="commands", dest="command")
+commands.add_parser("run", help="Run pipeline from config")
+commands.add_parser("report", help="Report experiments")
+
+args = parser.parse_args()
+
+if args.command == "report":
+    print(tabulate_data(get_experiments()))
+else:
+    parser.print_help()

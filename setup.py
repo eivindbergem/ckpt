@@ -8,5 +8,6 @@ setup(name='ckpt',
       author_email='eivind.bergem@gmail.com',
       license='GPL',
       packages=['ckpt'],
+      scripts=['bin/ckpt'],
       test_suite='nose.collector',
       tests_require=['nose'])
