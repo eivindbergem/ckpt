@@ -43,7 +43,7 @@ def prune(rows):
 
     return pruned
 
-def get_experiments(ex_name=None):
+def get_experiments(ids=None):
     path = os.path.join(get_ckpt_path(), "experiments")
 
     experiments = []
@@ -54,7 +54,7 @@ def get_experiments(ex_name=None):
         with open(os.path.join(path, experiment), "rb") as fd:
             data = pickle.load(fd)
 
-        if ex_name and data['metadata']['name'] != ex_name:
+        if ids and short_hash not in ids:
             continue
 
         experiments.append((short_hash, data['metadata']['name'],
