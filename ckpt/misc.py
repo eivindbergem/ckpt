@@ -2,6 +2,9 @@ import os
 import json
 import joblib
 import hashlib
+import csv
+
+from contextlib import contextmanager
 
 ckpt_path = ".ckpt"
 
@@ -35,6 +38,24 @@ def save_as_json(data, filename):
 def load_json(filename):
     with open(filename) as fd:
         return json.load(fd)
+
+@contextmanager
+def open_csv(filename, mode="r", dialect="excel", **fmtparams):
+    with open(filename, mode, newline='') as fd:
+        if "r" in mode:
+            fn = csv.reader
+        elif "w" in mode:
+            fn = csv.writer
+
+        yield fn(fd, dialect, **fmtparams)
+
+def save_as_csv(data, filename, headers=None):
+    with open_csv(filename, "w") as writer:
+        if headers:
+            writer.writerow(headers)
+
+        for row in data:
+            writer.writerow(row)
 
 def mark_final(iterable):
     prev = None
