@@ -78,7 +78,7 @@ def default_value(config, default, *keys):
 
     return set(d)
 
-def tabulate_data(experiments, sort_by=None, floatfmt=".4f"):
+def tabulate_data(experiments, sort_by=None):
     config_keys = set([])
     metrics_keys = set([])
 
@@ -96,8 +96,14 @@ def tabulate_data(experiments, sort_by=None, floatfmt=".4f"):
             + values_from_keys(metrics, metrics_keys)
             for short_hash, name, config, metrics in experiments]
 
-    return tabulate(sorted(data, key=lambda x : x[1]),
-                    headers=headers, floatfmt=floatfmt)
+    if sort_by:
+        index = headers.index(sort_by)
+        data.sort(key = lambda row : row[index], reverse=True)
+
+    return data, headers
+
+def pretty_print(data, headers, floatfmt=".4f"):
+    return print(tabulate(data, headers=headers, floatfmt=floatfmt))
 
 def remove_experiment(filename):
     os.remove(os.path.join(get_ckpt_path(), "experiments", filename))
