@@ -1,7 +1,8 @@
-import json
 import os.path
 import time
 import logging
+import hashlib
+import pickle
 
 from .misc import mkdirp, get_ckpt_path, save_as_json
 from .checkpoint import Checkpoint
@@ -15,35 +16,30 @@ logging.basicConfig(format=LOG_FORMAT,
                     level=LOG_LEVEL)
 
 class Experiment(object):
-    def __init__(self, name, config):
+    def __init__(self, name, config, dry_run=False):
         self.name = name
         self.config = config
+        self.metadata = {"name": name}
+        self.dry_run = dry_run
+        self.logger = logging.getLogger("ckpt.experiment")
 
     def __enter__(self):
+        self.logger.info("Running experiment '{}'".format(self.name))
         self.metrics = {}
-        self.timestamp = time.time()
-        self.checkpoints = []
+        self.metadata['start'] = time.time()
 
         mkdirp(self.get_path())
-        self.save_config()
-
-        self.log_handler = logging.FileHandler(self.join_path("log"))
-        self.log_handler.setFormatter(logging.Formatter(LOG_FORMAT,
-                                                        datefmt=LOG_DATEFMT))
-        logging.getLogger('').addHandler(self.log_handler)
-
-        self.logger = logging.getLogger("ckpt.experiment<{}>".format(self.name))
-
-        self.logger.info("Running experiment '{}'".format(self.name))
 
         return self
 
     def __exit__(self, *exc_details):
-        self.logger.info("Experiment done, saving config and results.")
+        self.metadata['stop'] = time.time()
 
-        self.save_metrics()
-        self.save_checkpoints()
-        logging.getLogger('').removeHandler(self.log_handler)
+        if self.metrics:
+            self.logger.info("Experiment done, saving config and results.")
+            self.save()
+        else:
+            self.logger.info("Experiment done, no metrics added, not saving.")
 
     def add_metrics(self, metrics):
         for k, v in metrics.items():
@@ -51,38 +47,30 @@ class Experiment(object):
 
         self.metrics.update(metrics)
 
+    def get_filename(self, data):
+        def update_hash(m, d):
+            for key, value in sorted(d.items()):
+                m.update(key.encode("utf-8"))
+
+                if isinstance(value, dict):
+                    update_hash(m, value)
+                else:
+                    m.update(str(value).encode("utf-8"))
+
+        m = hashlib.sha256()
+
+        update_hash(m, data)
+
+        return os.path.join(self.get_path(), "{}.pkl".format(m.hexdigest()))
+
     def get_path(self):
-        return os.path.join(get_ckpt_path(), "experiments", self.name,
-                            str(self.timestamp))
+        return os.path.join(get_ckpt_path(), "experiments")
 
-    def join_path(self, *paths):
-        return os.path.join(self.get_path(), *paths)
+    def save(self):
+        data = {"config": self.config,
+                "metrics": self.metrics,
+                "metadata": self.metadata}
 
-    def save_config(self):
-        save_as_json(self.config, self.join_path("config.json"))
-
-    def save_metrics(self):
-        save_as_json(self.metrics, self.join_path("metrics.json"))
-
-    def save_checkpoints(self):
-        save_as_json([ckpt.get_path() for ckpt in self.checkpoints],
-                     self.join_path("checkpoints.json"))
-
-    def add_checkpoint(self, name, config=None, dependencies=None,
-                       prev_checkpoint=None):
-        if not config:
-            config = {}
-
-        if not dependencies:
-            dependencies = []
-
-        # Depend on previous checkpoint if none other specified
-        if not prev_checkpoint and self.checkpoints:
-            prev_checkpoint = self.checkpoints[-1]
-
-        ckpt = Checkpoint(name, config, prev_checkpoint,
-                          dependencies, self.logger)
-
-        self.checkpoints.append(ckpt)
-
-        return ckpt
+        if not self.dry_run:
+            with open(self.get_filename(data), "wb") as fd:
+                pickle.dump(data, fd)

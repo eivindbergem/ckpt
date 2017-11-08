@@ -1,5 +1,7 @@
 import os
 import json
+import joblib
+import hashlib
 
 ckpt_path = ".ckpt"
 
@@ -44,3 +46,41 @@ def mark_final(iterable):
         prev = item
 
     yield True, prev
+
+def get_hash(item):
+    return joblib.hashing.hash(item, hash_name="sha256")
+
+def get_file_hash(filename, blocksize=2**20):
+    m = hashlib.sha256()
+
+    with open(filename, "rb", buffering=0) as fd:
+        while True:
+            data = fd.read(blocksize)
+
+            if not data:
+                break
+
+            m.update(data)
+
+    return m.hexdigest()
+
+def shortest_unique_prefix(lst):
+    n = len(lst)
+
+    for i in range(1, n + 1):
+        prefixes = set(item[:i] for item in lst)
+
+        if len(prefixes) == n:
+            return i
+
+def get_short_hashes(hashes):
+    k = shortest_unique_prefix(hashes)
+
+    return [item[:k] for item in hashes]
+
+def get_long_hash(short_hash):
+    path = os.path.join(get_ckpt_path(), "experiments")
+
+    for filename in os.listdir(path):
+        if filename.startswith(short_hash):
+            return filename

@@ -1,10 +1,11 @@
 import os
 import os.path
+import pickle
 
 from collections import defaultdict
 from tabulate import tabulate
 
-from .misc import get_ckpt_path, load_json
+from .misc import get_ckpt_path, load_json, get_short_hashes
 from .config import ckpt_config
 
 def flatten(d):
@@ -22,7 +23,7 @@ def flatten(d):
 def prune(rows):
     values = defaultdict(set)
 
-    for name, config, metrics in rows:
+    for _, _, config, _ in rows:
         for k, v in config.items():
             values[k].add(str(v))
 
@@ -31,8 +32,8 @@ def prune(rows):
 
     pruned = []
 
-    for name, config, metrics in rows:
-        row = (name,
+    for short_hash, name, config, metrics in rows:
+        row = (short_hash, name,
                {k: v for k, v in config.items()
                 if k in keys},
                metrics)
@@ -46,25 +47,18 @@ def get_experiments(ex_name=None):
     path = os.path.join(get_ckpt_path(), "experiments")
 
     experiments = []
+    filenames = os.listdir(path)
+    short_hashes = get_short_hashes(filenames)
 
-    for name in os.listdir(path):
-        if ex_name and name != ex_name:
+    for short_hash, experiment in zip(short_hashes, filenames):
+        with open(os.path.join(path, experiment), "rb") as fd:
+            data = pickle.load(fd)
+
+        if ex_name and data['metadata']['name'] != ex_name:
             continue
 
-        for experiment in os.listdir(os.path.join(path, name)):
-            config = load_json(os.path.join(path, name, experiment,
-                                            "config.json"))
-
-            try:
-                metrics = load_json(os.path.join(path, name, experiment,
-                                                 "metrics.json"))
-            except FileNotFoundError:
-                continue
-
-            if not metrics:
-                continue
-
-            experiments.append((name, flatten(config), metrics))
+        experiments.append((short_hash, data['metadata']['name'],
+                            flatten(data['config']), data['metrics']))
 
     return prune(experiments)
 
@@ -73,20 +67,37 @@ def values_from_keys(d, keys, default=None):
             else default
             for k in keys]
 
+def default_value(config, default, *keys):
+    d = config
+
+    for key in keys:
+        if key not in d:
+            return default
+
+        d = d[key]
+
+    return set(d)
+
 def tabulate_data(experiments, sort_by=None, floatfmt=".4f"):
     config_keys = set([])
     metrics_keys = set([])
 
-    for _, config, metrics in experiments:
+    for _, _, config, metrics in experiments:
         config_keys.update(config.keys())
         metrics_keys.update(metrics.keys())
 
-    config_keys = sorted(config_keys - set(ckpt_config['report']['ignore-config']))
-    metrics_keys = sorted(metrics_keys - set(ckpt_config['report']['ignore-metrics']))
+    config_keys = sorted(config_keys - default_value(ckpt_config, set([]),
+                                                     "report", "ignore-config"))
+    metrics_keys = sorted(metrics_keys - default_value(ckpt_config, set([]),
+                                                       "report", "ignore-metrics"))
 
-    headers = ["name"] + config_keys + metrics_keys
-    data = [[name] + values_from_keys(config, config_keys)
+    headers = ["id", "name"] + config_keys + metrics_keys
+    data = [[short_hash, name] + values_from_keys(config, config_keys)
             + values_from_keys(metrics, metrics_keys)
-            for name, config, metrics in experiments]
+            for short_hash, name, config, metrics in experiments]
 
-    return tabulate(data, headers=headers, floatfmt=floatfmt)
+    return tabulate(sorted(data, key=lambda x : x[1]),
+                    headers=headers, floatfmt=floatfmt)
+
+def remove_experiment(filename):
+    os.remove(os.path.join(get_ckpt_path(), "experiments", filename))

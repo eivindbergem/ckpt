@@ -1,4 +1,3 @@
-import hashlib
 import os
 import os.path
 import time
@@ -9,16 +8,13 @@ from functools import wraps
 
 from .misc import mkdirp, get_ckpt_path
 
-BLOCKSIZE = 2**13
-
 class Checkpoint(object):
-    def __init__(self, name, config, prev_checkpoint, dependencies, logger):
+    path = None
+
+    def __init__(self, name, dependencies):
         self.name = name
-        self.config = config
-        self.prev_checkpoint = prev_checkpoint
         self.dependencies = dependencies
-        self.path = os.path.join(get_ckpt_path(), "checkpoints", self.get_hash())
-        self.logger = logger
+        self.logger = logging.getLogger("ckpt.checkpoint")
 
     def __enter__(self):
         self.logger.info("Entering checkpoint '{}'".format(self.name))
@@ -59,26 +55,18 @@ class Checkpoint(object):
     def get_hash(self):
         m = hashlib.sha256()
 
-        for key, value in sorted(self.config.items()):
-            m.update("{}{}".format(key, value).encode("utf-8"))
+        m.update(self.name.encode("utf-8"))
 
-        files = self.dependencies[:]
-
-        if self.prev_checkpoint:
-            files += self.prev_checkpoint.listdir()
-
-        for filename in files:
-            with open(filename, "rb") as fd:
-                data = fd.read(BLOCKSIZE)
-
-                if not data:
-                    break
-
-                m.update(data)
+        for dep in sorted(self.dependencies):
+            m.update(dep.encode("utf-8"))
 
         return m.hexdigest()
 
     def get_path(self):
+        if not self.path:
+            self.path = os.path.join(get_ckpt_path(), "checkpoints",
+                                     self.get_hash())
+
         return self.path
 
     def join_path(self, *paths):
@@ -88,7 +76,8 @@ class Checkpoint(object):
         mkdirp(self.get_path())
 
     def listdir(self):
-        return [self.join_path(path) for path in os.listdir(self.get_path())]
+        return sorted([self.join_path(path)
+                       for path in os.listdir(self.get_path())])
 
     def exists(self):
         return os.path.exists(self.get_path()) and len(self.listdir()) > 0
