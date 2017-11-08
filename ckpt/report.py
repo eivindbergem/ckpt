@@ -48,7 +48,7 @@ def get_experiments(ids=None):
 
     experiments = []
     filenames = os.listdir(path)
-    short_hashes = get_short_hashes(filenames)
+    short_hashes = get_short_hashes(filenames, minimum=7)
 
     for short_hash, experiment in zip(short_hashes, filenames):
         with open(os.path.join(path, experiment), "rb") as fd:

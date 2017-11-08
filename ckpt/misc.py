@@ -85,17 +85,20 @@ def get_file_hash(filename, blocksize=2**20):
 
     return m.hexdigest()
 
-def shortest_unique_prefix(lst):
+def shortest_unique_prefix(lst, minimum=None):
     n = len(lst)
 
     for i in range(1, n + 1):
         prefixes = set(item[:i] for item in lst)
 
         if len(prefixes) == n:
-            return i
+            if minimum:
+                return max([i, minimum])
+            else:
+                return i
 
-def get_short_hashes(hashes):
-    k = shortest_unique_prefix(hashes)
+def get_short_hashes(hashes, minimum=None):
+    k = shortest_unique_prefix(hashes, minimum)
 
     return [item[:k] for item in hashes]
 
