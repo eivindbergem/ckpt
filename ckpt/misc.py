@@ -3,7 +3,9 @@ import json
 import joblib
 import hashlib
 import csv
+import inspect
 
+from functools import wraps
 from contextlib import contextmanager
 
 ckpt_path = ".ckpt"
@@ -108,3 +110,16 @@ def get_long_hash(short_hash):
     for filename in os.listdir(path):
         if filename.startswith(short_hash):
             return filename
+
+def autoinit(fn):
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        params = inspect.signature(self.__init__).bind(*args, **kwargs)
+        params.apply_defaults()
+
+        for key, value in params.arguments.items():
+            setattr(self, key, value)
+
+        return fn(self, *args, **kwargs)
+
+    return wrapper
