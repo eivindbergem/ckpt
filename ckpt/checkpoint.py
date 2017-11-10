@@ -3,6 +3,7 @@ import os.path
 import time
 import logging
 import gzip
+import hashlib
 
 from functools import wraps
 

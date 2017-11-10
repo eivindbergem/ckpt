@@ -1,4 +1,3 @@
-from .checkpoint import input_checkpoint
 from .misc import mark_final
 
 from functools import wraps
