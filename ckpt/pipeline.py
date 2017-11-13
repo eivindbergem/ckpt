@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import json
 import pickle
+import logging
 
 def lazy(fn):
     @wraps(fn)
@@ -30,6 +31,7 @@ class Pipeline(object):
     def __init__(self, pipes):
         self.labels, self.pipes = list(zip(*pipes))
         self.metrics = {}
+        self.logger = logging.getLogger("ckpt.pipeline")
 
     @classmethod
     def from_file(cls, filename, pipes):
@@ -48,6 +50,8 @@ class Pipeline(object):
                             for label, pipe in zip(self.labels, self.pipes)))
 
     def fit(self, X, y=None, use_checkpoints=True):
+        self.logger.info("Fitting pipeline {}".format(self.get_name()))
+
         for is_final, pipe in mark_final(self.pipes):
             pipe._fit(X, y, use_checkpoints)
 
