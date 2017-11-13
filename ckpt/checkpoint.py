@@ -28,6 +28,8 @@ class Checkpoint(object):
         return self
 
     def __exit__(self, *exc_details):
+        self.logger.info("Leaving checkpoint '{}'".format(self.name))
+
         if os.path.exists(self.get_path()) and not self.listdir():
             self.logger.info("Checkpoint dir for {} empty, removing."
                              .format(self.name))
