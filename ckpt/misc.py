@@ -1,9 +1,9 @@
 import os
 import json
-import joblib
 import hashlib
 import csv
 import inspect
+import pickle
 
 from functools import wraps
 from contextlib import contextmanager
@@ -71,7 +71,11 @@ def mark_final(iterable):
     yield True, prev
 
 def get_hash(item):
-    return joblib.hashing.hash(item, hash_name="sha256")
+    m = hashlib.sha256()
+
+    m.update(pickle.dumps(item))
+
+    return m.hexdigest()
 
 def get_file_hash(filename, blocksize=2**20):
     m = hashlib.sha256()
