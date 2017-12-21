@@ -1,6 +1,5 @@
 from functools import wraps
 from sklearn.externals import joblib
-import dill
 import inspect
 
 from .base import Transformer, Predictor, Pipe
