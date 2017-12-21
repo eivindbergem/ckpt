@@ -15,6 +15,14 @@ logging.basicConfig(format=LOG_FORMAT,
                     datefmt=LOG_DATEFMT,
                     level=LOG_LEVEL)
 
+metrics = {}
+
+def add_metric(name, fn):
+    metrics[name] = fn
+
+def get_metrics():
+    return metrics
+
 class Experiment(object):
     def __init__(self, name, config, dry_run=False):
         self.name = name
@@ -25,7 +33,7 @@ class Experiment(object):
 
     def __enter__(self):
         self.logger.info("Running experiment '{}'".format(self.name))
-        self.metrics = {}
+        self.results = {}
         self.metadata['start'] = time.time()
 
         mkdirp(self.get_path())
@@ -35,17 +43,17 @@ class Experiment(object):
     def __exit__(self, *exc_details):
         self.metadata['stop'] = time.time()
 
-        if self.metrics:
+        if self.results:
             self.logger.info("Experiment done, saving config and results.")
             self.save()
         else:
-            self.logger.info("Experiment done, no metrics added, not saving.")
+            self.logger.info("Experiment done, no results added, not saving.")
 
-    def add_metrics(self, metrics):
-        for k, v in metrics.items():
-            self.logger.info("Added metric: {} = {}".format(k, v))
+    def add_results(self, name, y_true, y_pred):
+        self.results[name] = {"y_true": y_true,
+                              "y_pred": y_pred}
 
-        self.metrics.update(metrics)
+        self.logger.info("Added results: {}".format(name))
 
     def get_filename(self, data):
         def update_hash(m, d):
@@ -68,7 +76,7 @@ class Experiment(object):
 
     def save(self):
         data = {"config": self.config,
-                "metrics": self.metrics,
+                "results": self.results,
                 "metadata": self.metadata}
 
         if not self.dry_run:

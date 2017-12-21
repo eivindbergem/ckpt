@@ -7,6 +7,7 @@ from tabulate import tabulate
 
 from .misc import get_ckpt_path, load_json, get_short_hashes
 from .config import ckpt_config
+from .experiment import get_metrics
 
 def flatten(d):
     flattened = {}
@@ -56,6 +57,18 @@ def get_experiments(ids=None):
 
         if ids and short_hash not in ids:
             continue
+
+        # For new style experiments, the results are saved and metrics
+        # calculated later, while old style saves only metrics at
+        # experiment time.
+        if "results" in data:
+            if not "metrics" in data:
+                data['metrics'] = {}
+
+            for name, result in data['results'].items():
+                for metric, fn in get_metrics().items():
+                    score = fn(result['y_true'], result['y_pred'])
+                    data['metrics']["{}-{}".format(name, metric)] = score
 
         experiments.append((short_hash, data['metadata']['name'],
                             flatten(data['config']), data['metrics']))
