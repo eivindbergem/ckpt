@@ -30,7 +30,6 @@ def load_config(filename):
 class Pipeline(object):
     def __init__(self, pipes):
         self.labels, self.pipes = list(zip(*pipes))
-        self.metrics = {}
         self.logger = logging.getLogger("ckpt.pipeline")
 
     @classmethod
@@ -65,13 +64,3 @@ class Pipeline(object):
             X, y = pipe.transform(X, y)
 
         return self.pipes[-1].predict(X)
-
-    def evaluate(self, X, y_true, label_prefix=None):
-        y_pred = self.predict(X)
-
-        return {name if not label_prefix
-                else "{}-{}".format(label_prefix, label): fn(y_true, y_pred)
-                for label, fn in self.metrics.items()}
-
-    def add_metrics(self, metrics):
-        self.metrics.update(metrics)
