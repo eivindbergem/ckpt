@@ -9,6 +9,17 @@ from .misc import get_ckpt_path, load_json, get_short_hashes
 from .config import ckpt_config
 from .experiment import get_metrics
 
+def common_prefix(lists):
+    n = 0
+
+    for items in zip(*lists):
+        if all(item == items[0] for i, item in enumerate(items)):
+            n += 1
+        else:
+            break
+
+    return n
+
 def flatten(d):
     flattened = {}
 
@@ -70,7 +81,7 @@ def get_experiments(ids=None):
                     score = fn(result['y_true'], result['y_pred'])
                     data['metrics']["{}-{}".format(name, metric)] = score
 
-        experiments.append((short_hash, data['metadata']['name'],
+        experiments.append((short_hash, [key for key in data['config'].keys()],
                             flatten(data['config']), data['metrics']))
 
     return prune(experiments)
@@ -94,18 +105,26 @@ def default_value(config, default, *keys):
 def tabulate_data(experiments, sort_by=None):
     config_keys = set([])
     metrics_keys = set([])
+    names = []
 
-    for _, _, config, metrics in experiments:
+    for _, name, config, metrics in experiments:
         config_keys.update(config.keys())
         metrics_keys.update(metrics.keys())
+        names.append(name)
 
     config_keys = sorted(config_keys - default_value(ckpt_config, set([]),
                                                      "report", "ignore-config"))
     metrics_keys = sorted(metrics_keys - default_value(ckpt_config, set([]),
                                                        "report", "ignore-metrics"))
 
-    headers = ["id", "name"] + config_keys + metrics_keys
-    data = [[short_hash, name] + values_from_keys(config, config_keys)
+    name_start = common_prefix(names)
+
+    headers = ["id", "name", "config"] + metrics_keys
+    data = [[short_hash, "+".join(n for n in name[name_start:])] +
+            #values_from_keys(config, config_keys)
+            [", ".join("{}: {}".format(key, config[key])
+                       for key in config_keys
+                       if key in config)]
             + values_from_keys(metrics, metrics_keys)
             for short_hash, name, config, metrics in experiments]
 
