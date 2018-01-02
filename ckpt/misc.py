@@ -103,7 +103,7 @@ def shortest_unique_prefix(lst, minimum=None):
             else:
                 return i
 
-def get_short_hashes(hashes, minimum=None):
+def get_short_hashes(hashes, minimum=7):
     k = shortest_unique_prefix(hashes, minimum)
 
     return [item[:k] for item in hashes]

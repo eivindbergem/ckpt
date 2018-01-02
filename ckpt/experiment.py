@@ -4,7 +4,7 @@ import logging
 import hashlib
 import pickle
 
-from .misc import mkdirp, get_ckpt_path, save_as_json
+from .misc import mkdirp, get_ckpt_path, save_as_json, get_short_hashes
 from .checkpoint import Checkpoint
 
 LOG_FORMAT = '%(asctime)s %(name)-10s %(message)s'
@@ -79,6 +79,9 @@ class Experiment(object):
                 "results": self.results,
                 "metadata": self.metadata}
 
+        filename = self.get_filename(data)
+        ex_id = get_short_hashes([os.path.basename(filename)])[0]
+        self.logger.info("Saving experiment {}".format(ex_id))
         if not self.dry_run:
             with open(self.get_filename(data), "wb") as fd:
                 pickle.dump(data, fd)
