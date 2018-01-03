@@ -122,7 +122,7 @@ def tabulate_data(experiments, sort_by=None):
     headers = ["id", "name", "config"] + metrics_keys
     data = [[short_hash, "+".join(n for n in name[name_start:])] +
             #values_from_keys(config, config_keys)
-            [", ".join("{}: {}".format(key, config[key])
+            ["; ".join("{}: {}".format(key, config[key])
                        for key in config_keys
                        if key in config)]
             + values_from_keys(metrics, metrics_keys)
