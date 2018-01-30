@@ -33,7 +33,10 @@ class Checkpoint(object):
         if os.path.exists(self.get_path()) and not self.listdir():
             self.logger.info("Checkpoint dir for {} empty, removing."
                              .format(self.name))
-            os.rmdir(self.get_path())
+            try:
+                os.rmdir(self.get_path())
+            except NotADirectoryError:
+                pass
 
     @staticmethod
     def save(fn):

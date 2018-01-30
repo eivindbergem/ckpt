@@ -1,13 +1,16 @@
 import os
 import os.path
 import pickle
+import pprint
+import numpy as np
 
 from collections import defaultdict
 from tabulate import tabulate
+from sklearn.metrics import confusion_matrix
 
 from .misc import get_ckpt_path, load_json, get_short_hashes
 from .config import ckpt_config
-from .experiment import get_metrics
+from .experiment import get_metrics, get_reports
 
 def common_prefix(lists):
     n = 0
@@ -55,10 +58,9 @@ def prune(rows):
 
     return pruned
 
-def get_experiments(ids=None):
+def load_experiments(ids=None):
     path = os.path.join(get_ckpt_path(), "experiments")
 
-    experiments = []
     filenames = os.listdir(path)
     short_hashes = get_short_hashes(filenames, minimum=7)
 
@@ -66,12 +68,20 @@ def get_experiments(ids=None):
         with open(os.path.join(path, experiment), "rb") as fd:
             data = pickle.load(fd)
 
-        if ids and short_hash not in ids:
-            continue
+        if not ids or short_hash in ids:
+            yield short_hash, data
 
+def get_experiments(ids=None, pipe=None, config_filter=None):
+    experiments = []
+
+    for short_hash, data in load_experiments(ids):
         # For new style experiments, the results are saved and metrics
         # calculated later, while old style saves only metrics at
         # experiment time.
+
+        if pipe and pipe not in data['config']:
+            continue
+
         if "results" in data:
             if not "metrics" in data:
                 data['metrics'] = {}
@@ -81,8 +91,18 @@ def get_experiments(ids=None):
                     score = fn(result['y_true'], result['y_pred'])
                     data['metrics']["{}-{}".format(name, metric)] = score
 
+        config = flatten(data['config'])
+        remove = False
+
+        if config_filter:
+            for key, value in config_filter.items():
+                if not key in config or config[key] != value:
+                    remove = True
+        if remove:
+            continue
+
         experiments.append((short_hash, [key for key in data['config'].keys()],
-                            flatten(data['config']), data['metrics']))
+                            config, data['metrics']))
 
     return prune(experiments)
 
@@ -139,3 +159,23 @@ def pretty_print(data, headers, floatfmt=".4f"):
 
 def remove_experiment(filename):
     os.remove(os.path.join(get_ckpt_path(), "experiments", filename))
+
+def inspect_experiment(ex_id):
+    _, ex = list(load_experiments([ex_id]))[0]
+
+    print("Experiment {}:".format(ex_id))
+
+    pp = pprint.PrettyPrinter()
+
+    pp.pprint(ex['config'])
+
+    results = ex['results']['dev']
+
+    print()
+    for fn in get_reports().values():
+        fn(results['y_true'], results['y_pred'])
+
+    for name, fn in (("Mean", np.mean),
+                     ("Std", np.std),
+                     ("Median", np.median)):
+        print("{}: {}".format(name, fn(results['y_pred'])))

@@ -35,7 +35,7 @@ class Pipe(ABC):
 
     def _fit(self, X, y, use_checkpoints):
         if use_checkpoints:
-            dependencies = [get_hash(self.get_params()),
+            dependencies = [get_hash(sorted(self.get_params().items())),
                             get_hash((X, y))]
 
             with Checkpoint("{}.fit".format(self.get_name()),

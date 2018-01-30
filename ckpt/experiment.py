@@ -16,12 +16,19 @@ logging.basicConfig(format=LOG_FORMAT,
                     level=LOG_LEVEL)
 
 metrics = {}
+reports = {}
 
 def add_metric(name, fn):
     metrics[name] = fn
 
 def get_metrics():
     return metrics
+
+def add_report(name, fn):
+    reports[name] = fn
+
+def get_reports():
+    return reports
 
 class Experiment(object):
     def __init__(self, name, config, dry_run=False):
