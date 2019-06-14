@@ -63,7 +63,7 @@ def mark_final(iterable):
     prev = None
 
     for item in iterable:
-        if prev:
+        if prev is not None:
             yield False, prev
 
         prev = item

@@ -90,7 +90,8 @@ class Parser(object):
             args.config = os.path.join(get_ckpt_path(), "experiments",
                                        long_hash)
             args.dry_run = False
-            args.checkpoints = True
+            args.checkpoints = False
+            args.repeat = 1
             args.n = None
         elif args.command == "remove":
             for ex_id in args.experiment_id:

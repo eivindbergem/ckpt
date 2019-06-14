@@ -12,27 +12,31 @@ from .misc import mkdirp, get_ckpt_path
 class Checkpoint(object):
     path = None
 
-    def __init__(self, name, dependencies):
+    def __init__(self, name, dependencies, quiet=False):
         self.name = name
         self.dependencies = dependencies
         self.logger = logging.getLogger("ckpt.checkpoint")
+        self.quiet = quiet
 
     def __enter__(self):
-        self.logger.info("Entering checkpoint '{}'".format(self.name))
+        if not self.quiet:
+            self.logger.info("Entering checkpoint '{}'".format(self.name))
 
-        if self.exists():
-            self.logger.info("Found checkpoint for {}".format(self.name))
+            if self.exists():
+                self.logger.info("Found checkpoint for {}".format(self.name))
 
         self.mkdir()
 
         return self
 
     def __exit__(self, *exc_details):
-        self.logger.info("Leaving checkpoint '{}'".format(self.name))
+        if not self.quiet:
+            self.logger.info("Leaving checkpoint '{}'".format(self.name))
 
         if os.path.exists(self.get_path()) and not self.listdir():
-            self.logger.info("Checkpoint dir for {} empty, removing."
-                             .format(self.name))
+            if not self.quiet:
+                self.logger.info("Checkpoint dir for {} empty, removing."
+                                 .format(self.name))
             try:
                 os.rmdir(self.get_path())
             except NotADirectoryError:

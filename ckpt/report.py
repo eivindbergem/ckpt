@@ -122,7 +122,7 @@ def default_value(config, default, *keys):
 
     return set(d)
 
-def tabulate_data(experiments, sort_by=None):
+def tabulate_data(experiments, sort_by=None, reverse_sort=True):
     config_keys = set([])
     metrics_keys = set([])
     names = []
@@ -150,7 +150,7 @@ def tabulate_data(experiments, sort_by=None):
 
     if sort_by:
         index = headers.index(sort_by)
-        data.sort(key = lambda row : row[index], reverse=True)
+        data.sort(key = lambda row : row[index], reverse=reverse_sort)
 
     return data, headers
 
